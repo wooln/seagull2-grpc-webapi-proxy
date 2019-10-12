@@ -5,7 +5,7 @@
 
 1. import本类库
 2. 准备和引入[grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway/)生成的go文件
-3. 准备配置文件
+3. 准备配置文件，务必修改服务名，根据需要配置Mapping
 ```
 {
 	"Name": "服务名称",
@@ -22,7 +22,7 @@
 	"Stdout": "C:\\builder_out.log"
 }
 ```
-5. 调用Proxy, 传入[]RegisterAction类型的参数, EndpointKey为配置文件中的GrpcEndpointMapping自动的Key
+5. 调用Proxy, 传入[]RegisterAction类型的参数, EndpointKey为配置文件中的GrpcEndpointMapping对应的Key
 ```
 package main
 
@@ -34,8 +34,8 @@ import (
 func main()  {
 	actions := []proxyLib.RegisterAction {
 		proxyLib.RegisterAction{
-			Action: gw.RegisterGreeterHandlerFromEndpoint,
-			EndpointKey: "Greeter",
+			Action: gw.RegisterGreeterHandlerFromEndpoint, //grpc-gateway生成的
+			EndpointKey: "Greeter",//对应配置文件中的GrpcEndpointMapping的Key
 		},		
 		proxyLib.RegisterAction{
 			Action: gw.RegisterGreeterNewHandlerFromEndpoint,
