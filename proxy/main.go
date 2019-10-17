@@ -2,20 +2,28 @@ package proxy
 
 import (	
 	"os"
-	"log" 
+	"log"
+	"path/filepath"  
 	"github.com/kardianos/service" //装包成操作系统的服务运行	
+	"github.com/wooln/seagull2-grpc-webapi-proxy/gateway"	
   )
 var logger service.Logger
 
 //主方法
-func Proxy(registerActions []RegisterAction)  {		
+func Proxy(registerActions []gateway.RegisterAction)  {			
 	
 	config, err := GetConfigByDefaultPath()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	if(config.ProxyConfig.DocDir == ""){
+		execPaht, _ := GetExePath()
+		config.ProxyConfig.DocDir =  filepath.Join(execPaht, "doc")
+	}
+
 	osServiceConfig := config.OSServiceConfig
+
 	svcConfig := &service.Config{
 		Name:        osServiceConfig.Name,
 		DisplayName: osServiceConfig.DisplayName,

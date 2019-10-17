@@ -32,18 +32,18 @@ import (
 func swaggerServer(dir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		glog.Infof("Serving %s", r.URL.Path)
-		p := strings.TrimPrefix(r.URL.Path, "/swagger/")
+		p := strings.TrimPrefix(r.URL.Path, "/doc/")
 
 		// p = path.Join(dir, p)
 		// http.ServeFile(w, r, p)
 		// return
 
 		//如果请求的是json,则使用ServerFile返回文档josn
-		if strings.HasSuffix(r.URL.Path, ".json") {			
+		if strings.HasSuffix(r.URL.Path, ".swagger.json") {			
 			p = path.Join(dir, p)
 			http.ServeFile(w, r, p)
 		}else{
-			//否则就是请求的/swagger/swagger-ui/xx, 从编译的go资源中获取
+			//否则就是请求的/doc/swagger-ui/xx, 从编译的go资源中获取
 			data, err := Asset(p)
 			if(err != nil){
 				glog.Errorf("Not Found Asset: %s", p)

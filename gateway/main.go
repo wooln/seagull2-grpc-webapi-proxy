@@ -2,9 +2,9 @@ package gateway
 
 import (
 	"context"
-	"net/http"
-
+	"net/http"	
 	"github.com/golang/glog"
+	"log"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 )
 
@@ -14,6 +14,7 @@ type Endpoint struct {
 }
 
 // Options is a set of options to be passed to Run
+// 替换为了 GrpcWebApiProxyConfig
 type Options struct {
 	// Addr is the address to listen
 	Addr string
@@ -31,33 +32,43 @@ type Options struct {
 
 // Run starts a HTTP server and blocks while running if successful.
 // The server will be shutdown when "ctx" is canceled.
-func Run(ctx context.Context, opts Options) error {
+func Run(ctx context.Context, registerActions []RegisterAction, opts GrpcWebApiProxyConfig) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
-	conn, err := dial(ctx, opts.GRPCServer.Network, opts.GRPCServer.Addr)
-	if err != nil {
-		return err
+	
+	//根据配置决定是否启动时进行enpoint活性检查
+	if(opts.CheckEndpoint){
+		for key := range opts.GrpcEndpointMapping {			
+			addr := opts.GrpcEndpointMapping[key]
+			log.Println("检查地址...", addr, key)
+			conn, err := dial(ctx, "tcp", addr)
+			if err != nil {
+				return err
+			}
+			log.Println("检查地址通过", addr, key)
+			go func() {
+				<-ctx.Done()
+				if err := conn.Close(); err != nil {
+					glog.Errorf("Failed to close a client connection to the gRPC server: %v", err)
+				}
+			}()	
+		}		
 	}
-	go func() {
-		<-ctx.Done()
-		if err := conn.Close(); err != nil {
-			glog.Errorf("Failed to close a client connection to the gRPC server: %v", err)
-		}
-	}()
+
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/swagger/", swaggerServer(opts.SwaggerDir))
-	mux.HandleFunc("/healthz", healthzServer(conn))
+	mux.HandleFunc("/doc/", swaggerServer(opts.DocDir))
+	//mux.HandleFunc("/healthz", healthzServer(conn))
 
-	gw, err := newGateway(ctx, conn, opts)
+	gw, err := newGateway(ctx, registerActions, opts)
 	if err != nil {
 		return err
 	}
 	mux.Handle("/", gw)
 
+	addr := opts.WebAPIPort;
 	s := &http.Server{
-		Addr:    opts.Addr,
+		Addr:    addr,
 		Handler: allowCORS(mux),
 	}
 	go func() {
@@ -68,7 +79,8 @@ func Run(ctx context.Context, opts Options) error {
 		}
 	}()
 
-	glog.Infof("Starting listening at %s", opts.Addr)
+	glog.Infof("Starting listening at %s", addr)
+	log.Println("Starting listening WebApi at", addr)
 	if err := s.ListenAndServe(); err != http.ErrServerClosed {
 		glog.Errorf("Failed to listen and serve: %v", err)
 		return err

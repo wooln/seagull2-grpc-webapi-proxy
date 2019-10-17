@@ -1,19 +1,17 @@
 package proxy
 
 import (
-	"context"	
-	"google.golang.org/grpc"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"	
 	"os"
 	"path/filepath"  
 	"encoding/json"
+	"github.com/wooln/seagull2-grpc-webapi-proxy/gateway"
   )
 
 //配置文件相关
 // Config is the runner app config structure.
 type GrpcProxyOSServiceConfig struct {
 	OSServiceConfig OSServiceConfig	
-	ProxyConfig GrpcWebApiProxyConfig	
+	ProxyConfig gateway.GrpcWebApiProxyConfig	
 }
 
 type OSServiceConfig struct {
@@ -21,10 +19,6 @@ type OSServiceConfig struct {
 	Stderr, Stdout string
 }
 
-type GrpcWebApiProxyConfig struct {
-	WebAPIPort string 
-	GrpcEndpointMapping map[string]string
-}
 
 //获取可执行文件的目录，因为以服务运行时候需要计算的
 func GetExePath() (string, error) {
@@ -87,12 +81,4 @@ func GetConfigByDefaultPath() (*GrpcProxyOSServiceConfig, error) {
 		return nil, err
 	}
 	return conf, nil
-}
-
-//单个要注册的
-type RegisterAction struct {
-	//注册方法指引
-	Action func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error)
-	//grpc配置映射的key，通过key照Endpint的数值
-	EndpointKey string
 }

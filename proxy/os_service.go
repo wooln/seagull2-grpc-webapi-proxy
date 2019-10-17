@@ -3,13 +3,14 @@ package proxy
 import (	
 	"flag"		
 	"github.com/golang/glog"
+	"github.com/wooln/seagull2-grpc-webapi-proxy/gateway"
 	"github.com/kardianos/service" //装包成操作系统的服务运行	
   )
 
 //go程序包装成运行的部分
 type program struct{
-	ProxyConfig GrpcWebApiProxyConfig
-	RegisterActions []RegisterAction 
+	ProxyConfig gateway.GrpcWebApiProxyConfig
+	RegisterActions []gateway.RegisterAction 
 }
 
 func (p *program) Start(s service.Service) error {
