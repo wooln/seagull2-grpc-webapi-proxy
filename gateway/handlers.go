@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"path"
 	"strings"
-
+	"io/ioutil"
+	"net/url"
 	"github.com/golang/glog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
+	"log"
 )
 
 // // swaggerServer returns swagger specification files located under "/swagger/"
@@ -29,18 +31,21 @@ import (
 
 // swaggerServer returns swagger specification files located under "/swagger/". +包含swagger-ui目录,或把ui编译成go
 
-func swaggerServer(docVirtualPath string, dir string) http.HandlerFunc {
+func swaggerServer(docVirtualPath string, docDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		glog.Infof("Serving %s", r.URL.Path)
 		p := strings.TrimPrefix(r.URL.Path, docVirtualPath)
 
-		// p = path.Join(dir, p)
-		// http.ServeFile(w, r, p)
-		// return
+		if p == "" {
+			listHtml := renderListHtml(docVirtualPath, docDir)
+			w.Header().Set("Content-Type", "text/html")
+			w.Write([]byte(listHtml))
+			return
+		}
 
 		//如果请求的是json,则使用ServerFile返回文档josn
 		if strings.HasSuffix(r.URL.Path, ".swagger.json") {			
-			p = path.Join(dir, p)
+			p = path.Join(docDir, p)
 			http.ServeFile(w, r, p)
 		}else{
 			//否则就是请求的/doc/swagger-ui/xx, 从编译的go资源中获取
@@ -100,3 +105,41 @@ func healthzServer(conn *grpc.ClientConn) http.HandlerFunc {
 		fmt.Fprintln(w, "ok")
 	}
 }
+
+func renderListHtml(docVirtualPath string, docDir string) string {
+	//读取docDir里所有的.json文件渲染出来html
+
+	liHtml := ""
+	
+	files, _ := ioutil.ReadDir(docDir)
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		} else {
+			fileName := file.Name()
+
+			log.Println("找到文件:",fileName)
+
+			args := url.Values{}
+			args.Add("docFile", docVirtualPath + fileName )
+
+			liHtml +=  fmt.Sprintf(`
+			<li>
+				<a href="swagger-ui/index.html?%s">%s</a>
+			</li>
+			`, args.Encode(), fileName)
+		}
+	}
+
+	return  fmt.Sprintf(`
+	<html>
+		<body>
+			<ul>
+				%s
+			</ul>
+		</body>
+	</html>
+	`, liHtml)	
+}
+
+
