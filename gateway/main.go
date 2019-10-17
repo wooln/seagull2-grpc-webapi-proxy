@@ -56,8 +56,9 @@ func Run(ctx context.Context, registerActions []RegisterAction, opts GrpcWebApiP
 	}
 
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/doc/", swaggerServer(opts.DocDir))
+	mux := http.NewServeMux()	
+	//opts.DocVirtualPath ,如"/xxapi/doc/"
+	mux.HandleFunc(opts.DocVirtualPath, swaggerServer(opts.DocVirtualPath, opts.DocDir))
 	//mux.HandleFunc("/healthz", healthzServer(conn))
 
 	gw, err := newGateway(ctx, registerActions, opts)

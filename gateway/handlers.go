@@ -29,10 +29,10 @@ import (
 
 // swaggerServer returns swagger specification files located under "/swagger/". +包含swagger-ui目录,或把ui编译成go
 
-func swaggerServer(dir string) http.HandlerFunc {
+func swaggerServer(docVirtualPath string, dir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		glog.Infof("Serving %s", r.URL.Path)
-		p := strings.TrimPrefix(r.URL.Path, "/doc/")
+		p := strings.TrimPrefix(r.URL.Path, docVirtualPath)
 
 		// p = path.Join(dir, p)
 		// http.ServeFile(w, r, p)

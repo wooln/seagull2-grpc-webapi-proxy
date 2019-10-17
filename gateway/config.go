@@ -10,6 +10,7 @@ type GrpcWebApiProxyConfig struct {
 	WebAPIPort string 
 	GrpcEndpointMapping map[string]string
 	CheckEndpoint bool
+	DocVirtualPath string
 	DocDir string
 	Mux []runtime.ServeMuxOption
 }
